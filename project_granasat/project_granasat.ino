@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+// Include Shift Register Library
 #include "ShiftRegister74HC595/src/ShiftRegister74HC595.h"
 #include "ShiftRegister74HC595/src/ShiftRegister74HC595.cpp"
 
@@ -8,18 +9,23 @@
 #include "ArduinoRTClibrary-master/virtuabotixRTC.h"
 #include "ArduinoRTClibrary-master/virtuabotixRTC.cpp"
 
+// Include MP3 Pin Library
 #include "AltSoftSerial/AltSoftSerial.h"
 #include "AltSoftSerial/AltSoftSerial.cpp"
 
-#include "Adafruit_GFX_Library/Adafruit_GFX.h"
-#include "Adafruit_GFX_Library/Adafruit_GFX.cpp"
-
+// Include MP3 Player Library
 #include "DFRobotDFPlayerMini-master/DFRobotDFPlayerMini.h"
 #include "DFRobotDFPlayerMini-master/DFRobotDFPlayerMini.cpp"
 
+// Include Display Graphic Library
+#include "Adafruit_GFX_Library/Adafruit_GFX.h"
+#include "Adafruit_GFX_Library/Adafruit_GFX.cpp"
 #include "Adafruit_SSD1306/Adafruit_SSD1306.h"
 #include "Adafruit_SSD1306/Adafruit_SSD1306.cpp"
 
+
+
+// Include for InfraRed Signal Library (Remote)
 #include "IRremote-3.7.0/src/TinyIRReceiver.hpp"
 
 #include "musiclights.h"  // library contating the notes and delay of the music
@@ -36,10 +42,11 @@
 #define serialDataPin 7 
 #define clockPin 12
 #define latchPin 11 
-int OutputEnableLED = 13; 
 
-#define NumberOf74HC595  4 
-#define LedPin  13 
+#define OutputEnableLED 13
+
+#define NumberOf74HC595 4 
+#define LedPin 13 
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -89,32 +96,41 @@ volatile struct TinyIRReceiverCallbackDataStruct sCallbackData;
 #define RST 16
 virtuabotixRTC myRTC(CLK, DAT, RST);
 
+int song = -1;
+
+int note_playing = 0;
+uint8_t pinValues[] = {0b0000};
+unsigned int m_note;
+unsigned int m_delay;
+
 void setup()
 {
-    pinMode(serialDataPin, OUTPUT);
-    pinMode(clockPin, OUTPUT);
-    pinMode(latchPin, OUTPUT);
-    pinMode(OutputEnableLED, OUTPUT);
-    analogWrite(OutputEnableLED, 0);
-    
-    Serial.begin(9600);
-    softwareSerial.begin(9600);
-    if (player.begin(softwareSerial)) {
-    Serial.println(F("OK dfplayer"));
+  //Pin initialization
+  pinMode(serialDataPin, OUTPUT);
+  pinMode(clockPin, OUTPUT);
+  pinMode(latchPin, OUTPUT);
+  pinMode(OutputEnableLED, OUTPUT);
+  analogWrite(OutputEnableLED, 0);
 
+  //Audio player initialization
+  Serial.begin(9600);
+  softwareSerial.begin(9600);
+  if (player.begin(softwareSerial)) {
+    Serial.println(F("OK dfplayer"));
     player.volume(vol); // Set volume
-    
-  } else {
+  }
+  else {
     Serial.println(F("Connecting to DFPlayer Mini failed!"));
   }
-    initPCIInterruptForTinyReceiver();
-    Serial.println(F("Ready to receive IR signals at pin " STR(IR_INPUT_PIN)));
-    //initPCIInterruptForTinyReceiver();
-    //Serial.println(F("Ready to receive IR signals at pin " STR(IR_INPUT_PIN)));
-    if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32 display
+
+  //Remote controller initialization
+  initPCIInterruptForTinyReceiver(); //WIP
+  Serial.println(F("Ready to receive IR signals at pin " STR(IR_INPUT_PIN)));
+
+  //Display initialization
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32 display
     Serial.println(F("SSD1306 allocation failed"));
-    //for(;;);
-    }
+  }
   delay(2000);
 
   //display settings
@@ -123,266 +139,163 @@ void setup()
   display.setTextColor(WHITE);
   display.setCursor(0, 10);
 
+  display.clearDisplay();
+  display.setTextSize(2); // Draw 2X-scale text
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(15, 10);
+  display.display();      // Show initial text
+
   // init clock
   myRTC.setDS1302Time(00, 20, 13, 3, 8, 3, 2023);
   
-
+  
+  
 }
+
 
 
 void loop()
 {
-  // sr.setAllHigh();
-  // start display
 
-  //displayAll();
-  
-  uint8_t pinValues[] = {0b0000};
-  int luces[] = {24};
-  int num_luces = sizeof(luces) / sizeof(int);
-  
-  
-  enciendeLuces(luces,num_luces,pinValues);
+  for (int i=0;i<notes1;i++){
 
-  sr.setAll(pinValues);
-  display.clearDisplay();
-  display.setTextSize(2); // Draw 2X-scale text
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(15, 10);
-  display.display();      // Show initial text
-  
-  delay(100);
-  sr.setAll(pinValues);
-  delay(1500);
+    m_note = pgm_read_word(&light1[i]);
+    m_delay = pgm_read_word(&delay[i]);
+    delay(m_delay*100);
+    enciendeLuces(m_note,pinValues);
 
-  sr.setAllLow();
-}
-
-void enciendeLuces(int * luces,int num_luces,uint8_t * pinValues){
-  pinValues[0] = { 0b00000000 };
-  pinValues[1] = { 0b00000000 };
-  pinValues[2] = { 0b00000000 };
-  pinValues[3] = { 0b00000000 };
-
-  for (int i = 0; i < num_luces;i++){
-    int pos = luces[i];
-    Serial.println(pos);
-    
-    uint8_t mask = 0b00000001;
-    
-    if (pos < 8){
-      mask = mask << pos;
-      pinValues[3] = ( pinValues[3] | mask);
-    }
-    else if(pos >=8 && pos < 16) {
-      mask = mask << (pos % 8);
-      pinValues[1] = ( pinValues[1] | mask);
-    }
-    else if (pos >= 16 && pos < 24){
-      mask = mask << ((pos+1)%8);
-      pinValues[2] = ( pinValues[2] | mask);
-    }
-    else if (pos >= 24 && pos < 32){
-      mask = mask << ((pos+1)%8);
-      pinValues[0] = ( pinValues[0] | mask);
-    }
   }
-}
 
-
-void displayAll(void){
-
-  //Fecha
-
-  //Actualizar el reloj
-  myRTC.updateTime();
-  //Resetear el display
-  display.clearDisplay();
-  display.setTextSize(2); // Draw 2X-scale text
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(15, 10);
-  //Mostrar la fecha
-  display.print(myRTC.dayofmonth);
-  display.print(F("/"));
-  display.print(myRTC.month);
-  display.print(F("/"));
-  display.print(myRTC.year);
-  display.display();      // Show initial text
-  delay(100);
-  
-  // Scroll in the text
-  display.startscrollright(0x00, 0x0F);
-  delay(2250);
-  display.stopscroll();
-  delay(1000);
-
-  //Hora
-
-  //Actualizar el reloj
-  myRTC.updateTime();
-  //Limpiar el display
-  display.clearDisplay();
-  display.setTextSize(2); // Draw 2X-scale text
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(15, 10);
-  //Mostrar la fecha y hora
-  display.print(myRTC.hours);
-  display.print(F(":"));
-  display.print(myRTC.minutes);
-  display.print(F(":"));
-  display.print(myRTC.seconds);
-  display.display();      // Show initial text
-  delay(100);
-  
-
-  // Scroll in the text
-  display.startscrollright(0x00, 0x0F);
-  delay(2250);
-  display.stopscroll();
-  delay(1000);
+  // if (note_playing <= notes1){
+  //   m_note = pgm_read_word(&light1[note_playing]);
+  //   enciendeLuces(m_note,pinValues);
+  //   m_delay = pgm_read_word(&delay1[note_playing]);
+  //   delay(m_delay);
+  //   Serial.print(m_note);
+  //   Serial.print(" ");
+  //   Serial.print(m_delay);
+  //   Serial.print(" ");
+  //   Serial.print(note_playing);
+  //   Serial.println("\n");
+  //   note_playing = note_playing+1;
+  // }
 
 }
 
-void testscrolltext(void) {
-
-  display.clearDisplay();
-  display.setTextSize(2); // Draw 2X-scale text
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(15, 10);
-  display.println(F("GranaSAT"));
-  display.display();      // Show initial text
-  delay(100);
-
-  // Scroll in the text
-  display.startscrollright(0x00, 0x0F);
-  delay(2250);
-  display.stopscroll();
-  delay(1000);
+void enciendeLuces(unsigned int pos,uint8_t * pinValues){
   
+  pinValues[0] = 0b00000000;
+  pinValues[1] = 0b00000000;
+  pinValues[2] = 0b00000000;
+  pinValues[3] = 0b00000000;
+
+  uint8_t mask = 0b00000001;
+  
+  if (pos < 8){
+    mask = mask << pos;
+    pinValues[3] = ( pinValues[3] | mask);
+  }
+  else if(pos >=8 && pos < 16) {
+    mask = mask << (pos % 8);
+    pinValues[1] = ( pinValues[1] | mask);
+  }
+  else if (pos >= 16 && pos < 24){
+    mask = mask << ((pos+1)%8);
+    pinValues[2] = ( pinValues[2] | mask);
+  }
+  else if (pos >= 24 && pos < 32){
+    mask = mask << ((pos+1)%8);
+    pinValues[0] = ( pinValues[0] | mask);
+  }
+  sr.setAll(pinValues);
 }
-// unsigned int newdel1;
-// unsigned int note1;
-
-// // functions for different lights
-
-// void fur_elise(void) {
-//     int numberofnotes = 290;
-//     for(int w = 0; w<numberofnotes; w++){
-//       note1 = pgm_read_word(&furelisenotes[w]);
-//       //note1 = random(0,32);
-//       sr.set(note1, HIGH); // set single pin HIGH
-//       newdel1 = pgm_read_word(&furelisedelay[w]);
-//       delay(newdel1);
-//       if(newdel1 != 0){
-//         sr.setAllLow();
-//       }
-//     }
-// } 
 
 
-// unsigned int newdel2;
-// unsigned int note2;
+// void displayAll(void){
 
-// void sonata(void) {
-//     int numberofnotes = 301;
-//     for(int w = 0; w<numberofnotes; w++){
-//       //note2 = pgm_read_word(&sonatanotes[w]);
-//       note2 = random(0,32);
-//       sr.set(note2, HIGH);
-//       newdel2 = pgm_read_word(&sonatadelay[w]);
-//       delay(newdel2);
-//       if(newdel2 != 0){
-//         sr.setAllLow();
-//       }
-//     }
-// }
+//   //Fecha
 
-
-// unsigned int newdel3;
-// unsigned int note3;
-
-// void nuvole(void) {
-//     int numberofnotes = 1005;
-//     for(int w = 0; w<numberofnotes; w++){
-//       //note3 = pgm_read_word(&nuvolenotes[w]);
-//       note3 = random(0,32);
-//       sr.set(note3, HIGH);
-//       newdel3 = pgm_read_word(&nuvoledelay[w]);
-//       delay(newdel3);
-//       if(newdel3 != 0){
-//         sr.setAllLow();
-//       }
-//     }
-// }
-
-
-// unsigned int newdel4;
-// unsigned int note4;
-
-// void minuet(void) {
+//   //Actualizar el reloj
+//   myRTC.updateTime();
+//   //Resetear el display
+//   display.clearDisplay();
+//   display.setTextSize(2); // Draw 2X-scale text
+//   display.setTextColor(SSD1306_WHITE);
+//   display.setCursor(15, 10);
+//   //Mostrar la fecha
+//   display.print(myRTC.dayofmonth);
+//   display.print(F("/"));
+//   display.print(myRTC.month);
+//   display.print(F("/"));
+//   display.print(myRTC.year);
+//   display.display();      // Show initial text
+//   delay(100);
   
-//     int numberofnotes = 475;
-//     for(int w = 0; w<numberofnotes; w++){
-//       //note4 = pgm_read_word(&minuetnotes[w]);
-//       note4 = random(0,32);
-//       sr.set(note4, HIGH);
-//       newdel4 = pgm_read_word(&minuetdelay[w]);
-//       delay(newdel4);
-//       if(newdel4 != 0){
-//         sr.setAllLow();
-//       }
-//     }
+//   // Scroll in the text
+//   display.startscrollright(0x00, 0x0F);
+//   delay(2250);
+//   display.stopscroll();
+//   delay(1000);
+
+//   //Hora
+
+//   //Actualizar el reloj
+//   myRTC.updateTime();
+//   //Limpiar el display
+//   display.clearDisplay();
+//   display.setTextSize(2); // Draw 2X-scale text
+//   display.setTextColor(SSD1306_WHITE);
+//   display.setCursor(15, 10);
+//   //Mostrar la fecha y hora
+//   display.print(myRTC.hours);
+//   display.print(F(":"));
+//   display.print(myRTC.minutes);
+//   display.print(F(":"));
+//   display.print(myRTC.seconds);
+//   display.display();      // Show initial text
+//   delay(100);
+  
+
+//   // Scroll in the text
+//   display.startscrollright(0x00, 0x0F);
+//   delay(2250);
+//   display.stopscroll();
+//   delay(1000);
+
 // }
 
-// unsigned int newdel5;
-// unsigned int note5;
+// void testscrolltext(void) {
 
-// void hey_jude(void) {
-//     int numberofnotes = 917;
-//     for(int w = 0; w<numberofnotes; w++){
-//       //note5 = pgm_read_word(&heyjudenotes[w]);
-//       note5 = random(0,32);
-//       sr.set(note5, HIGH);
-//       newdel5 = pgm_read_word(&heyjudedelay[w]);
-//       delay(newdel5);
-//       if(newdel5 != 0){
-//         sr.setAllLow();
-//       }
-//     }
-// }
+//   display.clearDisplay();
+//   display.setTextSize(2); // Draw 2X-scale text
+//   display.setTextColor(SSD1306_WHITE);
+//   display.setCursor(15, 10);
+//   display.println(F("GranaSAT"));
+//   display.display();      // Show initial text
+//   delay(100);
 
-// unsigned int newdel6;
-// unsigned int note6;
-
-// void country_roads(void) {
-//     int numberofnotes = 548;
-//     for(int w = 0; w<numberofnotes; w++){
-//       //note6 = pgm_read_word(&countryroadsnotes[w]);
-//       note6 = random(0,32);
-//       sr.set(note6, HIGH);
-//       newdel6 = pgm_read_word(&countryroadsdelay[w]);
-//       delay(newdel6);
-//       if(newdel6 != 0){
-//         sr.setAllLow();
-//       }
-//     }
+//   // Scroll in the text
+//   display.startscrollright(0x00, 0x0F);
+//   delay(2250);
+//   display.stopscroll();
+//   delay(1000);
+  
 // }
 
 // interrupt for IR and getting the hexcode for the commands
 #if defined(ESP8266) || defined(ESP32)
-void IRAM_ATTR handleReceivedTinyIRData(uint16_t aAddress, uint8_t aCommand, bool isRepeat)
+  void IRAM_ATTR handleReceivedTinyIRData(uint16_t aAddress, uint8_t aCommand, bool isRepeat)
 #else
-void handleReceivedTinyIRData(uint16_t aAddress, uint8_t aCommand, bool isRepeat)
+  void handleReceivedTinyIRData(uint16_t aAddress, uint8_t aCommand, bool isRepeat)
 #endif
 {
-
-#if defined(ARDUINO_ARCH_MBED) || defined(ESP32)
+  #if defined(ARDUINO_ARCH_MBED) || defined(ESP32)
     // Copy data for main loop, this is the recommended way for handling a callback :-)
     sCallbackData.Address = aAddress;
     sCallbackData.Command = aCommand;
     sCallbackData.isRepeat = isRepeat;
     sCallbackData.justWritten = true;
-#else
+  #else
 
     // Print the codes
     Serial.print(F("A=0x"));
@@ -395,34 +308,31 @@ void handleReceivedTinyIRData(uint16_t aAddress, uint8_t aCommand, bool isRepeat
     
     // various actions for different buttons
     switch(aCommand)
-
-  {
-    // case ONE  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("1 is pressed"));display.println("Mozart: Sonata 16");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(1); sonata(); break;
-    // case TWO  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("2 is pressed"));display.println("Beethoven: Minuet");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(2); minuet();  break;
-    // case THREE  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("3 is pressed"));display.println("Beethoven: Fur Elise");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(3); fur_elise(); break;
-    // case FOUR : display.clearDisplay();display.setCursor(0,0);Serial.println(F("4 is pressed"));display.println("Einaudi: Nuvole Bianche");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(4); nuvole(); break;
-    // case FIVE : display.clearDisplay();display.setCursor(0,0);Serial.println(F("5 is pressed"));display.println("The Beatles: Hey Jude");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(5); hey_jude();  break;
-    // case SIX  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("6 is pressed"));display.println("John Denver: Country Roads");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(6); country_roads();  break;
-    case SEVEN  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("7 is pressed"));display.println("Queen: Bohemian Rhapsody");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(7); break;
-    case EIGHT  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("8 is pressed"));display.println("8");display.display(); display.println(vol); player.play(8); break;
-    case NINE :  display.clearDisplay();display.setCursor(0,0);Serial.println(F("9 is pressed"));display.println("9");display.display(); player.play(9); break;
-    case UP : vol = vol +1; if(vol>40){vol = maxvol;} player.volume(vol);display.clearDisplay();display.setCursor(5,15);Serial.println("UP is pressed");display.print("Volume:"); display.println(vol);display.display(); break;
-    case DOWN : vol = vol -1; if (vol<0){vol = minvol;} player.volume(vol);display.clearDisplay();display.setCursor(5,15);Serial.println("DOWN is pressed");display.print("Volume:"); display.println(vol);display.display(); break;
-    case LEFT : Serial.println(F("LEFT is pressed")); break;
-    case RIGHT  : Serial.println(F("RIGHT is pressed")); break;
-    case OKAY : Serial.println(F("OK is pressed")); break;
-    case ZERO : Serial.println(F("0 is pressed")); break;
-    case STAR : Serial.println(F("STAR is pressed")); break;
-    case HASH : Serial.println(F("HASH is pressed")); break;
-
-  default: 
-    Serial.println(" other button : ");
-    Serial.println(aCommand, HEX);
-    for (int i = 1; i<8 ; i++){
-      player.play(i);
-    }
-
-  }// End Case
-  
-#endif
+    {
+      case ONE  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("1 is pressed"));display.println("Mozart: Sonata 16");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(1); break;
+      case TWO  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("2 is pressed"));display.println("Beethoven: Minuet");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(2); break;
+      case THREE  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("3 is pressed"));display.println("Beethoven: Fur Elise");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(3); break;
+      case FOUR : display.clearDisplay();display.setCursor(0,0);Serial.println(F("4 is pressed"));display.println("Einaudi: Nuvole Bianche");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(4); break;
+      case FIVE : display.clearDisplay();display.setCursor(0,0);Serial.println(F("5 is pressed"));display.println("The Beatles: Hey Jude");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(5); break;
+      case SIX  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("6 is pressed"));display.println("John Denver: Country Roads");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(6); break;
+      case SEVEN  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("7 is pressed"));display.println("Queen: Bohemian Rhapsody");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(7); break;
+      case EIGHT  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("8 is pressed"));display.println("8");display.display(); display.println(vol); player.play(8); break;
+      case NINE :  display.clearDisplay();display.setCursor(0,0);Serial.println(F("9 is pressed"));display.println("9");display.display(); player.play(9); break;
+      case UP : vol = vol +1; if(vol>40){vol = maxvol;} player.volume(vol);display.clearDisplay();display.setCursor(5,15);Serial.println("UP is pressed");display.print("Volume:"); display.println(vol);display.display(); break;
+      case DOWN : vol = vol -1; if (vol<0){vol = minvol;} player.volume(vol);display.clearDisplay();display.setCursor(5,15);Serial.println("DOWN is pressed");display.print("Volume:"); display.println(vol);display.display(); break;
+      case LEFT : Serial.println(F("LEFT is pressed")); break;
+      case RIGHT  : Serial.println(F("RIGHT is pressed")); break;
+      case OKAY : Serial.println(F("OK is pressed")); break;
+      case ZERO : Serial.println(F("0 is pressed")); break;
+      case STAR : Serial.println(F("STAR is pressed")); break;
+      case HASH : Serial.println(F("HASH is pressed")); break;
+      default: 
+      Serial.println(" other button : ");
+      Serial.println(aCommand, HEX);
+      for (int i = 1; i<8 ; i++){
+        player.play(i);
+      }
+    }// End Case
+    
+  #endif
 }
