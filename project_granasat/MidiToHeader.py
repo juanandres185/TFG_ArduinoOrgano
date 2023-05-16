@@ -12,6 +12,8 @@ mid = mido.MidiFile("MIDIS/MiniMIDI.mid",clip=True)
 
 print(mid.type)
 
+f = open("midi2.txt","w")
+
 
 class note_obj():
     
@@ -98,7 +100,7 @@ for i in m:
     else:
         notas[i[1] + i[2] ] = [i[0]]
 
-"""
+
 f = open("notas.txt","w")
 
 delay = []
@@ -122,13 +124,11 @@ for i in sorted(notas):
     prev_nota = i
     
 f.close()
-"""
 
 f = open("musiclights.h","w")
 
 f.write("#ifndef MUSICLIGHTS_H\n")
 f.write("#define MUSICLIGHTS_H\n\n")
-f.write("\tconst int notes1 = {};\n".format(len(light)))
 f.write("\tconst int delay1 [] PROGMEM = {")
 first = True
 for i in delay:

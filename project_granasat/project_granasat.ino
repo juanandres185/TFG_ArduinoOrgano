@@ -96,12 +96,6 @@ volatile struct TinyIRReceiverCallbackDataStruct sCallbackData;
 #define RST 16
 virtuabotixRTC myRTC(CLK, DAT, RST);
 
-int song = -1;
-
-int note_playing = 0;
-uint8_t pinValues[] = {0b0000};
-unsigned int m_note;
-unsigned int m_delay;
 
 void setup()
 {
@@ -148,66 +142,62 @@ void setup()
   // init clock
   myRTC.setDS1302Time(00, 20, 13, 3, 8, 3, 2023);
   
-  
-  
 }
 
+//(WIP) Añadir las funciones de optimizadores 
+int cur_note = 0;
+int new_delay = 0;
 
 
 void loop()
 {
+  uint8_t pinValues[] = {0b0000};
+  int luces[] = {24,0};
+  int num_luces = sizeof(luces) / sizeof(int);
 
-  for (int i=0;i<notes1;i++){
+  luces[1] = pgm_read_word(&light1[cur_note]);
+  new_delay = pgm_read_word(&delay1[cur_note]);
 
-    m_note = pgm_read_word(&light1[i]);
-    m_delay = pgm_read_word(&delay[i]);
-    delay(m_delay*100);
-    enciendeLuces(m_note,pinValues);
+  delay(new_delay);
+  enciendeLuces(luces,num_luces,pinValues);
 
+  sr.setAll(pinValues);
+  cur_note = cur_note +1;
+  myRTC.updateTime();
+  if (cur_note > notes1){
+    cur_note = 0;
   }
-
-  // if (note_playing <= notes1){
-  //   m_note = pgm_read_word(&light1[note_playing]);
-  //   enciendeLuces(m_note,pinValues);
-  //   m_delay = pgm_read_word(&delay1[note_playing]);
-  //   delay(m_delay);
-  //   Serial.print(m_note);
-  //   Serial.print(" ");
-  //   Serial.print(m_delay);
-  //   Serial.print(" ");
-  //   Serial.print(note_playing);
-  //   Serial.println("\n");
-  //   note_playing = note_playing+1;
-  // }
-
 }
 
-void enciendeLuces(unsigned int pos,uint8_t * pinValues){
-  
-  pinValues[0] = 0b00000000;
-  pinValues[1] = 0b00000000;
-  pinValues[2] = 0b00000000;
-  pinValues[3] = 0b00000000;
 
-  uint8_t mask = 0b00000001;
-  
-  if (pos < 8){
-    mask = mask << pos;
-    pinValues[3] = ( pinValues[3] | mask);
+void enciendeLuces(int * luces,int num_luces,uint8_t * pinValues){
+  pinValues[0] = { 0b00000000 };
+  pinValues[1] = { 0b00000000 };
+  pinValues[2] = { 0b00000000 };
+  pinValues[3] = { 0b00000000 };
+
+  for (int i = 0; i < num_luces;i++){
+    int pos = luces[i];
+
+    uint8_t mask = 0b00000001;
+
+    if (pos < 8){
+      mask = mask << pos;
+      pinValues[3] = ( pinValues[3] | mask);
+    }
+    else if(pos >=8 && pos < 16) {
+      mask = mask << (pos % 8);
+      pinValues[1] = ( pinValues[1] | mask);
+    }
+    else if (pos >= 16 && pos < 24){
+      mask = mask << ((pos+1)%8);
+      pinValues[2] = ( pinValues[2] | mask);
+    }
+    else if (pos >= 24 && pos < 32){
+      mask = mask << ((pos+1)%8);
+      pinValues[0] = ( pinValues[0] | mask);
+    }
   }
-  else if(pos >=8 && pos < 16) {
-    mask = mask << (pos % 8);
-    pinValues[1] = ( pinValues[1] | mask);
-  }
-  else if (pos >= 16 && pos < 24){
-    mask = mask << ((pos+1)%8);
-    pinValues[2] = ( pinValues[2] | mask);
-  }
-  else if (pos >= 24 && pos < 32){
-    mask = mask << ((pos+1)%8);
-    pinValues[0] = ( pinValues[0] | mask);
-  }
-  sr.setAll(pinValues);
 }
 
 
