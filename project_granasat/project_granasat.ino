@@ -25,12 +25,12 @@
 
 
 
+#define IR_INPUT_PIN    2 //IR receiver output
 // Include for InfraRed Signal Library (Remote)
 #include "IRremote-3.7.0/src/TinyIRReceiver.hpp"
 
 #include "musiclights.h"  // library contating the notes and delay of the music
 
-#define IR_INPUT_PIN    2 //IR receiver output
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
@@ -96,6 +96,16 @@ volatile struct TinyIRReceiverCallbackDataStruct sCallbackData;
 #define RST 16
 virtuabotixRTC myRTC(CLK, DAT, RST);
 
+int starting_time;
+int current_time;
+int playing_song;
+int current_note;
+int delay_on_lights [32];
+uint8_t pinValues [4];
+const int * start_array;
+const int * light_array;
+const int * delay_array;
+int total_notes;
 
 void setup()
 {
@@ -141,63 +151,114 @@ void setup()
 
   // init clock
   myRTC.setDS1302Time(00, 20, 13, 3, 8, 3, 2023);
-  
+  starting_time = millis()/10;
+  current_note = 0;
+  playing_song = 1;
+
+  //Setting dealy_on_lights to 0
+  for (int i=0;i<32;i++){
+    delay_on_lights[i] = 0;
+  }
+
 }
 
 //(WIP) Añadir las funciones de optimizadores 
-int cur_note = 0;
-int new_delay = 0;
 
 
 void loop()
 {
-  uint8_t pinValues[] = {0b0000};
-  int luces[] = {24,0};
-  int num_luces = sizeof(luces) / sizeof(int);
 
-  luces[1] = pgm_read_word(&light1[cur_note]);
-  new_delay = pgm_read_word(&delay1[cur_note]);
-
-  delay(new_delay);
-  enciendeLuces(luces,num_luces,pinValues);
-
-  sr.setAll(pinValues);
-  cur_note = cur_note +1;
-  myRTC.updateTime();
-  if (cur_note > notes1){
-    cur_note = 0;
+  //Set the arrays acording to the song you want to play
+  switch(playing_song){
+    case 1: 
+      start_array = start1;
+      delay_array = delay1;
+      light_array = light1;
+      total_notes = notes1;
+      playing_song = 0;
+      break;
+    case -1:
+      break;
   }
+
+  //If a song is playing, run the code
+  if (playing_song != -1){
+    //Check the current time since the song started
+    current_time = millis()/10 - starting_time;
+    //Check when the next light will turn on
+    int current_start = pgm_read_word_near(start_array+current_note);
+    //Check when it will shut off after it turns on
+    int current_delay = pgm_read_word_near(delay_array+current_note);
+    //Chech which light will turn on
+    int current_light = pgm_read_word_near(light_array+current_note);
+
+    //If a note should start, run this code
+    while(current_start < current_time && total_notes > current_note){
+      //Turn on the light for current_delay time
+      delay_on_lights[current_light] = current_time+current_delay;
+      //Check the next note
+      current_note++;
+      if (total_notes > current_note){
+        current_start = pgm_read_word_near(start_array+current_note);
+        current_delay = pgm_read_word_near(delay_array+current_note);
+        current_light = pgm_read_word_near(light_array+current_note);
+      }
+      else //If no more notes are left, stop playing the song
+        playing_song = -1;
+    }
+    //Check if any lights should be turn off
+    for (int i =0;i<32;i++){
+      if (delay_on_lights[i] <= current_time){
+        delay_on_lights[i] = 0;
+      }
+    }
+
+    //This is a temporal workaround for the buggy board
+    delay_on_lights[24] = 1000;
+    //Turn on all the lights
+    turnOnLights(delay_on_lights,pinValues);
+  }
+  //Timer between iterations
+  delay(10);
+
 }
 
-
-void enciendeLuces(int * luces,int num_luces,uint8_t * pinValues){
+//Turn on all lights given in the lights array and turn off all others.
+void turnOnLights(int * lights,uint8_t * pinValues){
+  //Set pinValues to blank
   pinValues[0] = { 0b00000000 };
   pinValues[1] = { 0b00000000 };
   pinValues[2] = { 0b00000000 };
   pinValues[3] = { 0b00000000 };
 
-  for (int i = 0; i < num_luces;i++){
-    int pos = luces[i];
+  //For each light position
+  for (int i = 0; i < 32;i++){
+    int pos = i;
+    //If light is greater than 0, turn on the bit representing that light in pinValues
+    if (lights[pos] > 0){
+      uint8_t mask = 0b00000001;
 
-    uint8_t mask = 0b00000001;
-
-    if (pos < 8){
-      mask = mask << pos;
-      pinValues[3] = ( pinValues[3] | mask);
-    }
-    else if(pos >=8 && pos < 16) {
-      mask = mask << (pos % 8);
-      pinValues[1] = ( pinValues[1] | mask);
-    }
-    else if (pos >= 16 && pos < 24){
-      mask = mask << ((pos+1)%8);
-      pinValues[2] = ( pinValues[2] | mask);
-    }
-    else if (pos >= 24 && pos < 32){
-      mask = mask << ((pos+1)%8);
-      pinValues[0] = ( pinValues[0] | mask);
+      if (pos < 8){
+        mask = mask << pos;
+        pinValues[3] = ( pinValues[3] | mask);
+      }
+      else if(pos >=8 && pos < 16) {
+        mask = mask << (pos % 8);
+        pinValues[1] = ( pinValues[1] | mask);
+      }
+      else if (pos >= 16 && pos < 24){
+        mask = mask << ((pos+1)%8);
+        pinValues[2] = ( pinValues[2] | mask);
+      }
+      else if (pos >= 24 && pos < 32){
+        mask = mask << ((pos+1)%8);
+        pinValues[0] = ( pinValues[0] | mask);
+      }
     }
   }
+  //Turn on all the lights
+  sr.setAll(pinValues);
+
 }
 
 
