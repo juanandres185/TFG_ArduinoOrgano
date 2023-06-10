@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>458</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Organo de luces</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="ElementosInterfaz/Images.qrc">
+    <normaloff>:/Icons/GranaSAT.png</normaloff>:/Icons/GranaSAT.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_3">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>10</number>
+      </property>
+      <property name="sizeConstraint">
+       <enum>QLayout::SetMinimumSize</enum>
+      </property>
+      <property name="leftMargin">
+       <number>5</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QTextEdit" name="pathToSong">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>30</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>25</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="statusTip">
+         <string>Escribe aqui la ruta de la canción en formato MIDI</string>
+        </property>
+        <property name="whatsThis">
+         <string/>
+        </property>
+        <property name="accessibleName">
+         <string/>
+        </property>
+        <property name="accessibleDescription">
+         <string/>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="tabChangesFocus">
+         <bool>true</bool>
+        </property>
+        <property name="lineWrapMode">
+         <enum>QTextEdit::NoWrap</enum>
+        </property>
+        <property name="acceptRichText">
+         <bool>false</bool>
+        </property>
+        <property name="placeholderText">
+         <string>/MIDI/Canción.mid</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pathToSongButton">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="statusTip">
+         <string>Buscar la canción en el explorador</string>
+        </property>
+        <property name="text">
+         <string>Explorar Archivos</string>
+        </property>
+        <property name="icon">
+         <iconset resource="ElementosInterfaz/Images.qrc">
+          <normaloff>:/Icons/Carpeta.png</normaloff>:/Icons/Carpeta.png</iconset>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetNoConstraint</enum>
+      </property>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QLabel" name="songListTitle">
+          <property name="font">
+           <font>
+            <pointsize>15</pointsize>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Lista de canciones</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignHCenter|Qt::AlignTop</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="listWidget">
+          <property name="statusTip">
+           <string>Lista de canciones en la tarjeta SD</string>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <item>
+           <property name="text">
+            <string>Tarjeta SD no seleccionada</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="sizeConstraint">
+         <enum>QLayout::SetFixedSize</enum>
+        </property>
+        <property name="leftMargin">
+         <number>50</number>
+        </property>
+        <property name="rightMargin">
+         <number>50</number>
+        </property>
+        <item>
+         <widget class="QPushButton" name="saveButton">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="statusTip">
+           <string>Guardar la canción seleccionada a la tarjeta SD y en el código</string>
+          </property>
+          <property name="text">
+           <string>Guardar Canción</string>
+          </property>
+          <property name="icon">
+           <iconset resource="ElementosInterfaz/Images.qrc">
+            <normaloff>:/Icons/Guardar.png</normaloff>:/Icons/Guardar.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="deleteButton">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="statusTip">
+           <string>Eliminar la canción de la lista y el código</string>
+          </property>
+          <property name="text">
+           <string>Eliminar Canción</string>
+          </property>
+          <property name="icon">
+           <iconset resource="ElementosInterfaz/Images.qrc">
+            <normaloff>:/Icons/Eliminar.png</normaloff>:/Icons/Eliminar.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="compileButton">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>30</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="statusTip">
+           <string>Compilar el código del organo en la placa</string>
+          </property>
+          <property name="text">
+           <string>Compilar el código</string>
+          </property>
+          <property name="icon">
+           <iconset resource="ElementosInterfaz/Images.qrc">
+            <normaloff>:/Icons/Subir.png</normaloff>:/Icons/Subir.png</iconset>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="selectMenu">
+    <property name="title">
+     <string>Seleccionar</string>
+    </property>
+    <addaction name="actionBuscarSD"/>
+    <addaction name="actionBuscarArduino"/>
+   </widget>
+   <addaction name="selectMenu"/>
+  </widget>
+  <action name="actionHelpAddSongs">
+   <property name="text">
+    <string>Añadir Canciones</string>
+   </property>
+  </action>
+  <action name="actionHelpDeleteSongs">
+   <property name="text">
+    <string>Eliminar Canciones</string>
+   </property>
+  </action>
+  <action name="actionBuscarSD">
+   <property name="text">
+    <string>Buscar SD</string>
+   </property>
+  </action>
+  <action name="actionBuscarArduino">
+   <property name="text">
+    <string>Buscar Arduino</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="ElementosInterfaz/Images.qrc"/>
+ </resources>
+ <connections/>
+</ui>

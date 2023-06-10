@@ -144,99 +144,98 @@ def tone_to_light(m):
     #Cada pista tiene un rango de este intervalo en función de cuantas pistas haya
     #Cada nota se mapea sobre el rango asignado
     for track in tracks:
-        notes_on_track = track[:,0]
-        lowest_tone = np.min(notes_on_track)
-        lights_on_track = (notes_on_track - lowest_tone)
-        highest_tone = np.max(lights_on_track)
-        lights_on_track = lights_on_track / highest_tone
-        lights_on_track = lights_on_track * 31
-        lights_on_track = np.round(lights_on_track,0).astype(int)
-        
-        track[:,0] = lights_on_track
+        if (track.any()):
+            notes_on_track = track[:,0]
+            lowest_tone = np.min(notes_on_track)
+            lights_on_track = (notes_on_track - lowest_tone)
+            highest_tone = np.max(lights_on_track)
+            lights_on_track = lights_on_track / highest_tone
+            lights_on_track = lights_on_track * 31
+            lights_on_track = np.round(lights_on_track,0).astype(int)
+            
+            track[:,0] = lights_on_track
     
     #Finalmente, volvemos a juntar todas las pistas en una sola matriz
     final_matrix = tracks[0]
     if (len(tracks) > 1):
         for i in range(1,len(tracks)):
-            final_matrix = np.vstack(final_matrix,tracks[i])
+            final_matrix = np.vstack((final_matrix,tracks[i]))
     
     #Una vez terminado este proceso ya no necesitamos la columna pista por lo que podemos eliminarla
     return final_matrix[:,:3]
 
-
-#matrix_to_header se encarga de guardar los datos de la matriz en forma de cabecera para Arduino
-def matrix_to_header(m):
-    
-    #Convertimos la matriz a string
-    m = m.astype(str)
-    
-    #Abrimos el archivo de la cabecera
+#construct_header construye una cabecera vacia en la que añadiremos nuestras canciones
+def construct_header():
     f = open("musiclights.h","w")
     
     #Escribimos los ifndef define
     f.write("#ifndef MUSICLIGHTS_H\n")
-    f.write("#define MUSICLIGHTS_H\n\n")
-    
-    #Guardamos el número de notas
-    f.write("\tconst int notes1 = "+str(len(m[:,0]))+";\n")
-    
-    #Las luces
-    f.write("\tconst int light1 [] PROGMEM = {")
+    f.write("#define MUSICLIGHTS_H\n")
+    f.write("\n")
+    #Añadimos un marcador para saber donde ira la proxima canción
+    f.write("\t//Song Number 1\n")
+    f.write("\n")
+    f.write("#endif")
+
+#matrix_to_string crea el texto que deberemos añadir a la cabecera en base a la matriz y el número de canción
+def matrix_to_string(matrix,number):
+
+    m = matrix.astype(str)
+    #El numero de notas
+    num_notes = "\tconst int notes{} = {};\n".format(number,str(len(m[:,0])))
+
+    #La luz que debe encenderse
+    light = "\tconst int light{} [] PROGMEM = {{".format(number)
+    #En que momento
+    start = "\tconst int start{} [] PROGMEM = {{".format(number)
+    #Durante cuanto tiempo
+    delay = "\tconst int delay{} [] PROGMEM = {{".format(number)
     first = True
-    for i in m[:,0]:
+    for i in m[:]:
         if first:
-            f.write(i)
+            light += i[0]
+            start += i[1]
+            delay += i[2]
             first = False
         else:
-            f.write(", " + i)
-    f.write("};\n")
+            light += ", {}".format(i[0])
+            start += ", {}".format(i[1])
+            delay += ", {}".format(i[2])
+    light += "};\n"
+    start += "};\n"
+    delay += "};\n"
+
+    return num_notes,light,start,delay
+
+#add_song_to_header añade la canción en el header
+def add_song_to_header(num_notes,light,start,delay,number):
     
-    #El momento en el que se tienen que encender
-    f.write("\tconst int start1 [] PROGMEM = {")
-    first = True
-    for i in m[:,1]:
-        if first:
-            f.write(i)
-            first = False
-        else:
-            f.write(", " + i)
-    f.write("};\n")
-    
-    #El tiempo que tardan en apagarse
-    f.write("\tconst int delay1 [] PROGMEM = {")
-    first = True
-    for i in m[:,2]:
-        if first:
-            f.write(i)
-            first = False
-        else:
-            f.write(", " + i)
-    f.write("};\n")
-    
-    #Cerramos los defines
-    f.write("\n#endif")
-    
-    #Cerramos el archivo de la cabecera
+    with open("musiclights.h","r") as f:
+        contents = f.readlines()
+
+    f = open("musiclights.h","w")
+    for i in contents:
+        f.write("{}".format(i))
+        if (i == "\t//Song Number {}\n".format(number)):
+            f.write(num_notes)
+            f.write(light)
+            f.write(start)
+            f.write(delay)
+            f.write("\t//Song Number {}\n".format(number+1))
+
     f.close()
 
-#midi_to_header genera una cabecera para arduino a partir de un archivo MIDI
-def midi_to_header(title):
+
+#add_midi añade un MIDI a la cabecera
+def add_midi(title,number):
+
     mid = mido.MidiFile(title,clip=True)
-
-
+    
     m = midi_to_matrix(mid)
-    
+
     m = tone_to_light(m)
-    
-    matrix_to_header(m)
 
-def main():
-    #Establecemos la ruta hacia el archivo MIDI
-    title = "MIDIS/MiniMIDI.mid"
-    
-    midi_to_header(title)
+    num_notes, light, start, delay = matrix_to_string(m,number)
 
-
-if __name__ == "__main__":
-    main()
+    add_song_to_header(num_notes, light,start,delay,number)
     

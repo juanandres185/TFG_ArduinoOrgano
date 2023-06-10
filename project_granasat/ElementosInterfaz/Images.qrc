@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="Icons">
+    <file>Guardar.png</file>
+    <file>Eliminar.png</file>
+    <file>Subir.png</file>
+    <file>GranaSAT.png</file>
+    <file>Carpeta.png</file>
+  </qresource>
+</RCC>

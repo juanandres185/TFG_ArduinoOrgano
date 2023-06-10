@@ -162,7 +162,6 @@ void setup()
 
 }
 
-//(WIP) Añadir las funciones de optimizadores 
 
 
 void loop()
@@ -380,9 +379,6 @@ void turnOnLights(int * lights,uint8_t * pinValues){
       default: 
       Serial.println(" other button : ");
       Serial.println(aCommand, HEX);
-      for (int i = 1; i<8 ; i++){
-        player.play(i);
-      }
     }// End Case
     
   #endif
