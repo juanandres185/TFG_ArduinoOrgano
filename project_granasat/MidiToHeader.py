@@ -210,19 +210,66 @@ def matrix_to_string(matrix,number):
 #add_song_to_header añade la canción en el header
 def add_song_to_header(num_notes,light,start,delay,number):
     
+    #Abrimos y leemos todo el fichero almacenandolo en una lista
     with open("musiclights.h","r") as f:
         contents = f.readlines()
 
+    #Escribimos el archivo linea por linea
     f = open("musiclights.h","w")
     for i in contents:
         f.write("{}".format(i))
+        #Si encontramos el marcador de inicio de canción, pegamos el texto de la nueva canción a añadir
         if (i == "\t//Song Number {}\n".format(number)):
             f.write(num_notes)
             f.write(light)
             f.write(start)
             f.write(delay)
+            #Finalmente añadimos el marcador de la siguiente canción
             f.write("\t//Song Number {}\n".format(number+1))
 
+    f.close()
+
+#delete_song_from header se encarga de eliminar la canción con el número seleccionado de la cabecera
+def delete_song_from_header(number):
+    
+    #Leemos y almacenamos el archivo original
+    with open("musiclights.h","r") as f:
+        contents = f.readlines()
+    
+    
+    f = open("musiclights.h","w")
+    song = 1
+    i = 0
+    #Por cada linea del archivo
+    while i < len(contents):
+        #Si encontramos un marcador de canción deberemos añadir las siguientes lineas de forma distinta
+        if (contents[i] == "\t//Song Number {}\n".format(song)):
+            #Si es la ultima linea del archivo, simplemente reducimos su número en 1
+            if (contents[i+2] != "#endif"):
+                #Si el número de la canción es menor que el número de la canción a eliminar, dejamos el texto tal cual
+                if (song < number):
+                    for k in range(5):
+                        f.write(contents[i+k])
+                        
+                    i = i + 5
+                #Si el número de la canción es el que tenemos que eliminar, lo eliminamos
+                elif(song == number):
+                    i = i + 5
+                #Si el número de la canción es mayor al que tenemos que eliminar, reduciremos el número de dicha canción en 1
+                else:
+                    for k in range(5):
+                        f.write(contents[i+k].replace(str(song),str(song-1),1))
+                    i = i + 5
+                song = song + 1
+            else:
+                f.write(contents[i].replace(str(song),str(song-1),1))
+                i = i+1
+        #En caso de que sea cualquier otra linea, la añadimos sin más
+        else:
+            f.write(contents[i])
+            i = i+1
+        
+    #Cerramos el archivo
     f.close()
 
 

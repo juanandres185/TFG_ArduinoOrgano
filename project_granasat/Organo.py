@@ -174,14 +174,17 @@ class Ui_MainWindow(object):
     def searchSD(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self.centralwidget,"Selecciona la raiz de la SD",".")
         self.sdPath = path
+        self.openSD()
+        
+        return
+    
+    def openSD(self):
         self.listWidget.clear()
-        MP3s = os.listdir(path)
+        MP3s = os.listdir(self.sdPath)
         for i in MP3s:
             if i.find(".mp3") != -1:
                 item = QtWidgets.QListWidgetItem(i)
                 self.listWidget.addItem(item)
-        
-        
         return
     
     def searchMIDI(self):
@@ -216,13 +219,35 @@ class Ui_MainWindow(object):
             #MidiToHeader.add_midi("MIDIS/Determination.mid",1)
             
             #Finalmente añadimos la canción a la lista
-            item = QtWidgets.QListWidgetItem(title)
-            self.listWidget.addItem(item)
+            self.openSD()
             
             
         return
     
     def deleteSong(self):
+        
+        selected = self.listWidget.selectedItems()
+        
+        if (selected and self.sdPath != ""):
+            selected_number = int(selected[0].text().split("_")[1])
+            
+            #Delete from SD
+            for i in os.listdir(self.sdPath):
+                j = int(i.split("_")[1])
+                if j==selected_number:
+                    os.remove(self.sdPath+"/"+i)
+                elif j> selected_number:
+                    new_name = "Song_{}{}".format(j-1,i[6:])
+                    os.rename(self.sdPath+"/"+i,self.sdPath+"/"+new_name)
+            
+            
+            
+            #Delete from header
+            MidiToHeader.delete_song_from_header(selected_number)
+            
+            #Delete from list
+            self.openSD()
+            
         return
     
     def compileCode(self):
