@@ -11,6 +11,7 @@ import os
 import MidiToHeader
 from midi2audio import FluidSynth
 import subprocess
+import pyduinocli
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -168,9 +169,11 @@ class Ui_MainWindow(object):
         self.actionBuscarSD.setText(_translate("MainWindow", "Buscar SD"))
         self.actionBuscarArduino.setText(_translate("MainWindow", "Buscar Arduino"))
         
+    #Se encarga de seleccionar la placa Arduino en la que compilar el código
     def searchArduino(self):
         return
     
+    #Permite encontrar la raiz de la tarjeta SD en la que se almacenara la música
     def searchSD(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self.centralwidget,"Selecciona la raiz de la SD",".")
         self.sdPath = path
@@ -178,6 +181,7 @@ class Ui_MainWindow(object):
         
         return
     
+    #Carga el directorio de la sd en la lista de canciones
     def openSD(self):
         self.listWidget.clear()
         MP3s = os.listdir(self.sdPath)
@@ -187,11 +191,13 @@ class Ui_MainWindow(object):
                 self.listWidget.addItem(item)
         return
     
+    #Busca la ruta del archivo MIDI
     def searchMIDI(self):
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self.centralwidget,"Selecciona el archivo MIDI",".","Archivos Midi (*.mid)")
         if fileName:
             self.pathToSong.setText(fileName)
     
+    #Una vez seleccionado el MIDI y la SD, se guarda la canción tanto la SD como en el header
     def saveSong(self):
         
         
@@ -216,7 +222,6 @@ class Ui_MainWindow(object):
             
             #Añadimos el archivo al header
             MidiToHeader.add_midi(self.pathToSong.toPlainText(), self.listWidget.count()+1)
-            #MidiToHeader.add_midi("MIDIS/Determination.mid",1)
             
             #Finalmente añadimos la canción a la lista
             self.openSD()
@@ -231,7 +236,7 @@ class Ui_MainWindow(object):
         if (selected and self.sdPath != ""):
             selected_number = int(selected[0].text().split("_")[1])
             
-            #Delete from SD
+            #Eliminar de la SD
             for i in os.listdir(self.sdPath):
                 j = int(i.split("_")[1])
                 if j==selected_number:
@@ -240,17 +245,30 @@ class Ui_MainWindow(object):
                     new_name = "Song_{}{}".format(j-1,i[6:])
                     os.rename(self.sdPath+"/"+i,self.sdPath+"/"+new_name)
             
-            
-            
-            #Delete from header
+            #Eliminar del header
             MidiToHeader.delete_song_from_header(selected_number)
             
-            #Delete from list
+            #Actualizar la lista
             self.openSD()
             
         return
     
     def compileCode(self):
+        
+        arduino = pyduinocli.Arduino("./arduino-cli")
+        
+        brds = arduino.board.list()
+        
+        
+        port = brds["result"][0]["port"]["address"]
+        
+        print(port)
+        
+        arduino.compile(fqbn="arduino:avr:uno",sketch="project_granasat.ino")
+        arduino.upload(fqbn="arduino:avr:uno", sketch="project_granasat.ino", port=port)
+        
+        print("Comiladisimo manin")
+        
         return
     
     
