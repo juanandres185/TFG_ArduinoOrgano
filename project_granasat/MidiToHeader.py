@@ -32,7 +32,7 @@
  * 
  * ******************************************************************************************** *
  * To do:
- *              Implementar un sistema nuevo de cabecera que ocupe menos espacio
+ *              
  *              
  * ******************************************************************************************** *
  * Comments:
@@ -220,6 +220,7 @@ def add_song_to_header(num_notes,light,start,delay,number):
         f.write("{}".format(i))
         #Si encontramos el marcador de inicio de canción, pegamos el texto de la nueva canción a añadir
         if (i == "\t//Song Number {}\n".format(number)):
+            f.write("\t#define NOTES{}\n".format(number))
             f.write(num_notes)
             f.write(light)
             f.write(start)
@@ -248,18 +249,18 @@ def delete_song_from_header(number):
             if (contents[i+2] != "#endif"):
                 #Si el número de la canción es menor que el número de la canción a eliminar, dejamos el texto tal cual
                 if (song < number):
-                    for k in range(5):
+                    for k in range(6):
                         f.write(contents[i+k])
                         
-                    i = i + 5
+                    i = i + 6
                 #Si el número de la canción es el que tenemos que eliminar, lo eliminamos
                 elif(song == number):
-                    i = i + 5
+                    i = i + 6
                 #Si el número de la canción es mayor al que tenemos que eliminar, reduciremos el número de dicha canción en 1
                 else:
-                    for k in range(5):
+                    for k in range(6):
                         f.write(contents[i+k].replace(str(song),str(song-1),1))
-                    i = i + 5
+                    i = i + 6
                 song = song + 1
             else:
                 f.write(contents[i].replace(str(song),str(song-1),1))

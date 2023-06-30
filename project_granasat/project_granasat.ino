@@ -29,7 +29,7 @@
 // Include for InfraRed Signal Library (Remote)
 #include "IRremote-3.7.0/src/TinyIRReceiver.hpp"
 
-#include "musiclights.h"  // library contating the notes and delay of the music
+#include "musiclights.h"  // Header file contating the notes and delay of the music
 
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -42,10 +42,10 @@
 #define serialDataPin 7 
 #define clockPin 12
 #define latchPin 11 
+#define NumberOf74HC595 4 
 
 #define OutputEnableLED 13
 
-#define NumberOf74HC595 4 
 #define LedPin 13 
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -102,10 +102,10 @@ int playing_song;
 int current_note;
 int delay_on_lights [32];
 uint8_t pinValues [4];
+int total_notes;
 const int * start_array;
 const int * light_array;
 const int * delay_array;
-int total_notes;
 
 void setup()
 {
@@ -151,11 +151,9 @@ void setup()
 
   // init clock
   myRTC.setDS1302Time(00, 20, 13, 3, 8, 3, 2023);
-  starting_time = millis()/10;
-  current_note = 0;
   playing_song = 1;
 
-  //Setting dealy_on_lights to 0
+  //Setting delay_on_lights to 0
   for (int i=0;i<32;i++){
     delay_on_lights[i] = 0;
   }
@@ -169,13 +167,115 @@ void loop()
 
   //Set the arrays acording to the song you want to play
   switch(playing_song){
-    case 1: 
+    case 1:
+      #ifdef NOTES1
       start_array = start1;
       delay_array = delay1;
       light_array = light1;
       total_notes = notes1;
       playing_song = 0;
+      starting_time = millis()/10;
+      current_note = 0;
       break;
+      #else
+      playing_song = -1;
+      #endif
+    case 2:
+      #ifdef NOTES2
+      start_array = start2;
+      delay_array = delay2;
+      light_array = light2;
+      total_notes = notes2;
+      playing_song = 0;
+      starting_time = millis()/10;
+      current_note = 0;
+      #else
+      playing_song = -1;
+      #endif
+    case 3:
+      #ifdef NOTES3
+      start_array = start3;
+      delay_array = delay3;
+      light_array = light3;
+      total_notes = notes3;
+      playing_song = 0;
+      starting_time = millis()/10;
+      current_note = 0;
+      #else
+      playing_song = -1;
+      #endif
+    case 4:
+      #ifdef NOTES4
+      start_array = start4;
+      delay_array = delay4;
+      light_array = light4;
+      total_notes = notes4;
+      playing_song = 0;
+      starting_time = millis()/10;
+      current_note = 0;
+      #else
+      playing_song = -1;
+      #endif
+    case 5:
+      #ifdef NOTES5
+      start_array = start5;
+      delay_array = delay5;
+      light_array = light5;
+      total_notes = notes5;
+      playing_song = 0;
+      starting_time = millis()/10;
+      current_note = 0;
+      #else
+      playing_song = -1;
+      #endif
+    case 6:
+      #ifdef NOTES6
+      start_array = start6;
+      delay_array = delay6;
+      light_array = light6;
+      total_notes = notes6;
+      playing_song = 0;
+      starting_time = millis()/10;
+      current_note = 0;
+      #else
+      playing_song = -1;
+      #endif
+    case 7:
+      #ifdef NOTES7
+      start_array = start7;
+      delay_array = delay7;
+      light_array = light7;
+      total_notes = notes7;
+      playing_song = 0;
+      starting_time = millis()/10;
+      current_note = 0;
+      #else
+      playing_song = -1;
+      #endif
+    case 8:
+      #ifdef NOTES8
+      start_array = start8;
+      delay_array = delay8;
+      light_array = light8;
+      total_notes = notes8;
+      playing_song = 0;
+      starting_time = millis()/10;
+      current_note = 0;
+      #else
+      playing_song = -1;
+      #endif
+    case 9:
+      #ifdef NOTES9
+      start_array = start9;
+      delay_array = delay9;
+      light_array = light9;
+      total_notes = notes9;
+      playing_song = 0;
+      starting_time = millis()/10;
+      current_note = 0;
+      #else
+      playing_song = -1;
+      #endif
     case -1:
       break;
   }
@@ -194,7 +294,7 @@ void loop()
     //If a note should start, run this code
     while(current_start < current_time && total_notes > current_note){
       //Turn on the light for current_delay time
-      delay_on_lights[current_light] = current_time+current_delay;
+      delay_on_lights[current_light] = current_time+current_delay; 
       //Check the next note
       current_note++;
       if (total_notes > current_note){
@@ -260,78 +360,6 @@ void turnOnLights(int * lights,uint8_t * pinValues){
 
 }
 
-
-// void displayAll(void){
-
-//   //Fecha
-
-//   //Actualizar el reloj
-//   myRTC.updateTime();
-//   //Resetear el display
-//   display.clearDisplay();
-//   display.setTextSize(2); // Draw 2X-scale text
-//   display.setTextColor(SSD1306_WHITE);
-//   display.setCursor(15, 10);
-//   //Mostrar la fecha
-//   display.print(myRTC.dayofmonth);
-//   display.print(F("/"));
-//   display.print(myRTC.month);
-//   display.print(F("/"));
-//   display.print(myRTC.year);
-//   display.display();      // Show initial text
-//   delay(100);
-  
-//   // Scroll in the text
-//   display.startscrollright(0x00, 0x0F);
-//   delay(2250);
-//   display.stopscroll();
-//   delay(1000);
-
-//   //Hora
-
-//   //Actualizar el reloj
-//   myRTC.updateTime();
-//   //Limpiar el display
-//   display.clearDisplay();
-//   display.setTextSize(2); // Draw 2X-scale text
-//   display.setTextColor(SSD1306_WHITE);
-//   display.setCursor(15, 10);
-//   //Mostrar la fecha y hora
-//   display.print(myRTC.hours);
-//   display.print(F(":"));
-//   display.print(myRTC.minutes);
-//   display.print(F(":"));
-//   display.print(myRTC.seconds);
-//   display.display();      // Show initial text
-//   delay(100);
-  
-
-//   // Scroll in the text
-//   display.startscrollright(0x00, 0x0F);
-//   delay(2250);
-//   display.stopscroll();
-//   delay(1000);
-
-// }
-
-// void testscrolltext(void) {
-
-//   display.clearDisplay();
-//   display.setTextSize(2); // Draw 2X-scale text
-//   display.setTextColor(SSD1306_WHITE);
-//   display.setCursor(15, 10);
-//   display.println(F("GranaSAT"));
-//   display.display();      // Show initial text
-//   delay(100);
-
-//   // Scroll in the text
-//   display.startscrollright(0x00, 0x0F);
-//   delay(2250);
-//   display.stopscroll();
-//   delay(1000);
-  
-// }
-
 // interrupt for IR and getting the hexcode for the commands
 #if defined(ESP8266) || defined(ESP32)
   void IRAM_ATTR handleReceivedTinyIRData(uint16_t aAddress, uint8_t aCommand, bool isRepeat)
@@ -359,23 +387,23 @@ void turnOnLights(int * lights,uint8_t * pinValues){
     // various actions for different buttons
     switch(aCommand)
     {
-      case ONE  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("1 is pressed"));display.println("Mozart: Sonata 16");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(1); break;
-      case TWO  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("2 is pressed"));display.println("Beethoven: Minuet");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(2); break;
-      case THREE  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("3 is pressed"));display.println("Beethoven: Fur Elise");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(3); break;
-      case FOUR : display.clearDisplay();display.setCursor(0,0);Serial.println(F("4 is pressed"));display.println("Einaudi: Nuvole Bianche");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(4); break;
-      case FIVE : display.clearDisplay();display.setCursor(0,0);Serial.println(F("5 is pressed"));display.println("The Beatles: Hey Jude");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(5); break;
-      case SIX  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("6 is pressed"));display.println("John Denver: Country Roads");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(6); break;
-      case SEVEN  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("7 is pressed"));display.println("Queen: Bohemian Rhapsody");display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(7); break;
-      case EIGHT  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("8 is pressed"));display.println("8");display.display(); display.println(vol); player.play(8); break;
-      case NINE :  display.clearDisplay();display.setCursor(0,0);Serial.println(F("9 is pressed"));display.println("9");display.display(); player.play(9); break;
-      case UP : vol = vol +1; if(vol>40){vol = maxvol;} player.volume(vol);display.clearDisplay();display.setCursor(5,15);Serial.println("UP is pressed");display.print("Volume:"); display.println(vol);display.display(); break;
-      case DOWN : vol = vol -1; if (vol<0){vol = minvol;} player.volume(vol);display.clearDisplay();display.setCursor(5,15);Serial.println("DOWN is pressed");display.print("Volume:"); display.println(vol);display.display(); break;
-      case LEFT : Serial.println(F("LEFT is pressed")); break;
-      case RIGHT  : Serial.println(F("RIGHT is pressed")); break;
-      case OKAY : Serial.println(F("OK is pressed")); break;
-      case ZERO : Serial.println(F("0 is pressed")); break;
-      case STAR : Serial.println(F("STAR is pressed")); break;
-      case HASH : Serial.println(F("HASH is pressed")); break;
+      case ONE  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("1 is pressed"));display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(1); playing_song = 1;break;
+      case TWO  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("2 is pressed"));display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(2); playing_song = 2;break;
+      case THREE: display.clearDisplay();display.setCursor(0,0);Serial.println(F("3 is pressed"));display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(3); playing_song = 3;break;
+      case FOUR : display.clearDisplay();display.setCursor(0,0);Serial.println(F("4 is pressed"));display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(4); playing_song = 4;break;
+      case FIVE : display.clearDisplay();display.setCursor(0,0);Serial.println(F("5 is pressed"));display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(5); playing_song = 5;break;
+      case SIX  : display.clearDisplay();display.setCursor(0,0);Serial.println(F("6 is pressed"));display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(6); playing_song = 6;break;
+      case SEVEN: display.clearDisplay();display.setCursor(0,0);Serial.println(F("7 is pressed"));display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(7); playing_song = 7;break;
+      case EIGHT: display.clearDisplay();display.setCursor(0,0);Serial.println(F("8 is pressed"));display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(8); playing_song = 8;break;
+      case NINE : display.clearDisplay();display.setCursor(0,0);Serial.println(F("9 is pressed"));display.setCursor(5,15);display.print("Volume:"); display.println(vol);display.display(); player.play(9); playing_song = 9;break;
+      case UP   : vol = vol +1; if(vol>40){vol = maxvol;} player.volume(vol);display.clearDisplay();display.setCursor(5,15);Serial.println("UP is pressed")  ;display.print("Volume:"); display.println(vol);display.display();break;
+      case DOWN : vol = vol -1; if(vol<0 ){vol = minvol;} player.volume(vol);display.clearDisplay();display.setCursor(5,15);Serial.println("DOWN is pressed");display.print("Volume:"); display.println(vol);display.display();break;
+      case LEFT : Serial.println(F("LEFT is pressed")) ;break;
+      case RIGHT: Serial.println(F("RIGHT is pressed"));break;
+      case OKAY : Serial.println(F("OK is pressed"))   ;break;
+      case ZERO : Serial.println(F("0 is pressed"))    ;break;
+      case STAR : Serial.println(F("STAR is pressed")) ;break;
+      case HASH : Serial.println(F("HASH is pressed")) ;break;
       default: 
       Serial.println(" other button : ");
       Serial.println(aCommand, HEX);
